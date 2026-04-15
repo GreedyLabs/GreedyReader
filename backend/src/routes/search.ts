@@ -26,9 +26,13 @@ interface NaverBookResponse {
   items: NaverBookItem[]
 }
 
-// 네이버 응답에 포함된 <b> 등 HTML 태그 제거
+// 네이버 응답에 포함된 <b> 등 HTML 태그 제거 + 저자 구분자 ^ → |
 function stripHtml(str: string) {
   return str.replace(/<[^>]*>/g, '').trim()
+}
+
+function formatAuthor(str: string) {
+  return stripHtml(str).split('^').map((s) => s.trim()).filter(Boolean).join(' | ')
 }
 
 // GET /api/v1/search/books?query=파친코
@@ -70,7 +74,7 @@ searchRouter.get('/books', async (req, res) => {
 
     const books = data.items.map((item) => ({
       title:       stripHtml(item.title),
-      author:      stripHtml(item.author),
+      author:      formatAuthor(item.author),
       publisher:   stripHtml(item.publisher),
       coverUrl:    item.image,
       // isbn 필드는 "ISBN-10 ISBN-13" 형태 — 13자리를 우선 사용

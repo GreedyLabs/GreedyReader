@@ -212,7 +212,9 @@ export default function AddBookModal({ onClose }: Props) {
                 {book.title}
               </p>
               <p className="text-xs text-gray-500 mt-1 truncate">{book.author}</p>
-              <p className="text-xs text-gray-400 truncate">{book.publisher}</p>
+              <p className="text-xs text-gray-400 truncate">
+                {[book.publisher, book.pubdate?.slice(0, 4)].filter(Boolean).join(' · ')}
+              </p>
             </div>
 
             {/* 선택 표시 */}

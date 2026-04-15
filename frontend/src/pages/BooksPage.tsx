@@ -302,6 +302,9 @@ export default function BooksPage() {
                 <div className="px-2.5 py-2">
                   <p className="text-xs font-semibold text-gray-800 truncate">{book.title}</p>
                   <p className="text-[11px] text-gray-400 truncate mt-0.5">{book.author}</p>
+                  {book.pubdate && (
+                    <p className="text-[10px] text-gray-300 mt-0.5">{book.pubdate.slice(0, 4)}</p>
+                  )}
                   {book.rating ? (
                     <p className="text-[10px] text-amber-400 mt-1">
                       {'★'.repeat(book.rating)}
