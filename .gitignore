@@ -1,0 +1,13 @@
+node_modules
+dist
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+
+# SQLite DB 파일 (서버 데이터, git 추적 불필요)
+*.db
+*.db-shm
+*.db-wal
+CLAUDE.md

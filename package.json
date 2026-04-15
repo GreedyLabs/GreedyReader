@@ -1,0 +1,18 @@
+{
+  "name": "greedy-reader",
+  "private": true,
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "better-sqlite3"]
+  },
+  "scripts": {
+    "dev": "concurrently \"pnpm frontend:dev\" \"pnpm backend:dev\"",
+    "frontend:dev": "pnpm --filter @greedy-reader/frontend run dev",
+    "frontend:build": "pnpm --filter @greedy-reader/frontend run build",
+    "backend:dev": "pnpm --filter @greedy-reader/backend run dev",
+    "backend:build": "pnpm --filter @greedy-reader/backend run build",
+    "build": "pnpm frontend:build && pnpm backend:build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}
