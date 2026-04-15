@@ -1,0 +1,23 @@
+services:
+  backend:
+    image: ghcr.io/greedylabs/greedyreader-be:${BACKEND_TAG:-latest}
+    container_name: greedyreader-be
+    restart: unless-stopped
+    env_file:
+      - backend.env
+    volumes:
+      - backend-data:/app/data
+    ports:
+      - "8002:8000"
+
+  frontend:
+    image: ghcr.io/greedylabs/greedyreader-fe:${FRONTEND_TAG:-latest}
+    container_name: greedyreader-fe
+    restart: unless-stopped
+    ports:
+      - "3002:80"
+    depends_on:
+      - backend
+
+volumes:
+  backend-data:
