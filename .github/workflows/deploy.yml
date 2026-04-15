@@ -1,0 +1,81 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.out.outputs.frontend }}
+      backend: ${{ steps.out.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - id: filter
+        if: github.event_name == 'push'
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+            backend:
+              - 'backend/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+
+      - id: out
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "frontend=true" >> "$GITHUB_OUTPUT"
+            echo "backend=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "frontend=${{ steps.filter.outputs.frontend }}" >> "$GITHUB_OUTPUT"
+            echo "backend=${{ steps.filter.outputs.backend }}" >> "$GITHUB_OUTPUT"
+          fi
+
+  build-frontend:
+    needs: resolve
+    if: needs.resolve.outputs.frontend == 'true'
+    uses: ./.github/workflows/_build-image.yml
+    with:
+      component: frontend
+      dockerfile: ./frontend/Dockerfile
+      image: ${{ github.repository_owner }}/greedyreader-fe
+      version: ${{ github.run_number }}
+    secrets:
+      BUILD_ENV: ${{ secrets.FRONTEND_ENV }}
+
+  build-backend:
+    needs: resolve
+    if: needs.resolve.outputs.backend == 'true'
+    uses: ./.github/workflows/_build-image.yml
+    with:
+      component: backend
+      dockerfile: ./backend/Dockerfile
+      image: ${{ github.repository_owner }}/greedyreader-be
+      version: ${{ github.run_number }}
+
+  deploy:
+    needs: [resolve, build-frontend, build-backend]
+    if: |
+      always() &&
+      !cancelled() &&
+      needs.resolve.result == 'success' &&
+      needs.build-frontend.result != 'failure' &&
+      needs.build-backend.result != 'failure' &&
+      (needs.resolve.outputs.frontend == 'true' || needs.resolve.outputs.backend == 'true')
+    uses: ./.github/workflows/_deploy-compose.yml
+    with:
+      frontend_tag: ${{ needs.resolve.outputs.frontend == 'true' && github.run_number || 'latest' }}
+      backend_tag: ${{ needs.resolve.outputs.backend == 'true' && github.run_number || 'latest' }}
+    secrets:
+      BACKEND_ENV: ${{ secrets.BACKEND_ENV }}
