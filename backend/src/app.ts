@@ -11,7 +11,7 @@ import { aiRouter } from './routes/ai.js'
 export function createApp() {
   const app = express()
 
-  // 개발 중 Vite가 5173 대신 5174 등을 쓸 수 있어서 localhost는 모두 허용
+  // 개발 중 Vite가 다른 포트를 쓸 수 있어서 localhost는 모두 허용 (기본 3002)
   const allowedOrigins = process.env.FRONTEND_URL
     ? [process.env.FRONTEND_URL]
     : [/^http:\/\/localhost:\d+$/]
