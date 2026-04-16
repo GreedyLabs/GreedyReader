@@ -19,6 +19,11 @@ on:
         description: 'Version tag to apply (e.g. run number)'
         required: true
         type: string
+      no_cache:
+        description: 'If true, ignore build cache (use when build secrets changed)'
+        required: false
+        type: boolean
+        default: false
     secrets:
       BUILD_ENV:
         description: 'Optional build-time env file contents, mounted as secret id=build_env'
@@ -62,7 +67,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ inputs.component }}
+          no-cache: ${{ inputs.no_cache }}
+          cache-from: ${{ inputs.no_cache && '' || format('type=gha,scope={0}', inputs.component) }}
           cache-to: type=gha,mode=max,scope=${{ inputs.component }}
           secrets: |
             ${{ secrets.BUILD_ENV != '' && format('build_env={0}', secrets.BUILD_ENV) || '' }}

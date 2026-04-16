@@ -19,17 +19,11 @@ jobs:
     concurrency:
       group: deploy-greedyreader
       cancel-in-progress: false
-    defaults:
-      run:
-        working-directory: ${{ github.workspace }}/greedyreader
     env:
-      IMAGE_OWNER: ${{ github.repository_owner }}
       FRONTEND_TAG: ${{ inputs.frontend_tag }}
       BACKEND_TAG: ${{ inputs.backend_tag }}
     steps:
       - uses: actions/checkout@v6
-        with:
-          path: greedyreader
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
