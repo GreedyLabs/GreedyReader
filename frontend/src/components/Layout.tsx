@@ -54,7 +54,7 @@ export default function Layout() {
       </aside>
 
       {/* ── 메인 영역 ── */}
-      <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex-1 min-w-0 flex flex-col min-h-0">
 
         {/* 모바일 상단 헤더 (md 미만에서만 표시) */}
         <header className="md:hidden flex items-center justify-between px-5 py-4 bg-white border-b border-gray-100">
