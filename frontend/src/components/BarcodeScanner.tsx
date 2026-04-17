@@ -14,8 +14,12 @@ interface Props {
 export default function BarcodeScanner({ onDetect, onClose }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const controlsRef = useRef<IScannerControls | null>(null)
+  const onDetectRef = useRef(onDetect)
   const [state, setState] = useState<ScanState>('starting')
   const [errorMsg, setErrorMsg] = useState('')
+
+  // 렌더마다 최신 콜백 유지 (effect 재시작 없이)
+  onDetectRef.current = onDetect
 
   useEffect(() => {
     const reader = new BrowserMultiFormatReader()
@@ -26,7 +30,15 @@ export default function BarcodeScanner({ onDetect, onClose }: Props) {
 
       try {
         controlsRef.current = await reader.decodeFromConstraints(
-          { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } } },
+          {
+            video: {
+              facingMode: { ideal: 'environment' },
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+              // 연속 오토포커스 — 바코드에 포커스가 잡히게 함
+              advanced: [{ focusMode: 'continuous' } as MediaTrackConstraintSet],
+            },
+          },
           videoRef.current,
           (result, _error) => {
             if (stopped || !result) return
@@ -36,7 +48,7 @@ export default function BarcodeScanner({ onDetect, onClose }: Props) {
 
             stopped = true
             controlsRef.current?.stop()
-            onDetect(text)
+            onDetectRef.current(text)
           },
         )
 
@@ -56,7 +68,7 @@ export default function BarcodeScanner({ onDetect, onClose }: Props) {
       stopped = true
       controlsRef.current?.stop()
     }
-  }, [onDetect])
+  }, [])
 
   return (
     <div className="fixed inset-0 z-[60] bg-black flex flex-col">
