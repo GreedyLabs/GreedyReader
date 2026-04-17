@@ -109,7 +109,7 @@ export default function BooksPage() {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 px-4 py-2.5 bg-brand-600 text-white text-sm font-semibold rounded-xl hover:bg-brand-700 active:scale-95 transition-all shadow-sm"
+          className="flex items-center gap-1.5 px-4 py-2.5 gradient-brand text-white text-sm font-semibold rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-sm"
         >
           <span>+</span> 책 추가
         </button>
@@ -197,7 +197,7 @@ export default function BooksPage() {
               className={cn(
                 'px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all',
                 filter === tab.value
-                  ? 'bg-brand-600 text-white shadow-sm'
+                  ? 'gradient-brand text-white shadow-sm'
                   : 'bg-gray-100 text-gray-500 hover:bg-gray-200',
               )}
             >

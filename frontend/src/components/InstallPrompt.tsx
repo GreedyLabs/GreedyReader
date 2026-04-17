@@ -19,7 +19,7 @@ export default function InstallPrompt() {
           <button
             type="button"
             onClick={() => void promptInstall()}
-            className="flex-1 text-xs bg-brand-600 text-white py-1.5 rounded-md hover:bg-brand-700 transition-colors"
+            className="flex-1 text-xs gradient-brand text-white py-1.5 rounded-md hover:opacity-90 transition-all"
           >
             설치하기
           </button>

@@ -105,7 +105,7 @@ export default function AddBookModal({ onClose }: Props) {
 
       {/* ── 선택된 책 미리보기 + 상태 선택 ── */}
       {selected && (
-        <div className="mx-4 mb-3 p-4 rounded-2xl bg-brand-50 border border-brand-100 shrink-0">
+        <div className="mx-4 mb-3 p-4 rounded-2xl gradient-brand-subtle border border-violet-200 shrink-0">
           <div className="flex gap-3 items-start mb-3">
             {selected.coverUrl ? (
               <img
@@ -114,7 +114,7 @@ export default function AddBookModal({ onClose }: Props) {
                 className="w-12 h-16 object-cover rounded-lg shadow-sm shrink-0"
               />
             ) : (
-              <div className="w-12 h-16 rounded-lg bg-brand-200 flex items-center justify-center shrink-0 text-xl font-bold text-brand-700">
+              <div className="w-12 h-16 rounded-lg gradient-brand flex items-center justify-center shrink-0 text-xl font-bold text-white">
                 {selected.title[0]}
               </div>
             )}
@@ -134,7 +134,7 @@ export default function AddBookModal({ onClose }: Props) {
                 className={cn(
                   'flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl text-xs font-semibold transition-all',
                   status === opt.value
-                    ? 'bg-brand-600 text-white shadow-sm'
+                    ? 'gradient-brand text-white shadow-sm'
                     : 'bg-white text-gray-500 border border-gray-200',
                 )}
               >
@@ -147,7 +147,7 @@ export default function AddBookModal({ onClose }: Props) {
           <button
             onClick={handleAdd}
             disabled={createBook.isPending}
-            className="mt-3 w-full py-3 bg-brand-600 text-white text-sm font-bold rounded-xl hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+            className="mt-3 w-full py-3 gradient-brand text-white text-sm font-bold rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
           >
             {createBook.isPending ? '추가 중...' : '내 서재에 추가하기'}
           </button>

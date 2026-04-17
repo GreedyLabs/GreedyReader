@@ -12,3 +12,18 @@
     @apply bg-gray-50 text-gray-900;
   }
 }
+
+@layer utilities {
+  .gradient-brand {
+    @apply bg-gradient-to-r from-violet-700 to-indigo-700;
+  }
+  .gradient-brand-text {
+    @apply bg-gradient-to-r from-violet-700 to-indigo-500 bg-clip-text text-transparent;
+  }
+  .gradient-brand-subtle {
+    @apply bg-gradient-to-br from-violet-50 to-indigo-50;
+  }
+  .gradient-brand-active {
+    @apply bg-gradient-to-r from-violet-100 to-indigo-50;
+  }
+}

@@ -24,7 +24,7 @@ export default function AIPage() {
           <br />
           메모 정리, 책 토론, 도서 추천 기능을 이용할 수 있습니다.
         </p>
-        <button className="px-6 py-3 bg-brand-600 text-white font-medium rounded-xl hover:bg-brand-700 transition-colors">
+        <button className="px-6 py-3 gradient-brand text-white font-medium rounded-xl hover:opacity-90 transition-all">
           Pro로 업그레이드
         </button>
       </div>
@@ -59,7 +59,7 @@ export default function AIPage() {
               className={cn(
                 'max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed',
                 msg.role === 'user'
-                  ? 'bg-brand-600 text-white'
+                  ? 'gradient-brand text-white'
                   : 'bg-white border border-gray-200 text-gray-800',
               )}
             >
@@ -83,7 +83,7 @@ export default function AIPage() {
           <button
             onClick={handleSend}
             disabled={!input.trim()}
-            className="px-4 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2.5 gradient-brand text-white rounded-xl text-sm font-medium hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
             전송
           </button>

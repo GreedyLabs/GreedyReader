@@ -300,7 +300,7 @@ export default function BookDetailPage() {
               <button
                 onClick={handleSubmitMemo}
                 disabled={!content.trim() || createMemo.isPending}
-                className="w-full py-2.5 bg-brand-600 text-white text-sm font-bold rounded-xl hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+                className="w-full py-2.5 gradient-brand text-white text-sm font-bold rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
               >
                 {createMemo.isPending ? '저장 중...' : '저장'}
               </button>

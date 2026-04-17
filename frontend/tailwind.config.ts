@@ -6,13 +6,14 @@ export default {
     extend: {
       colors: {
         brand: {
-          50: '#fdf4ff',
-          100: '#fae8ff',
-          200: '#f5d0fe',
-          400: '#e879f9',
-          500: '#a855f7',
-          600: '#9333ea',
-          700: '#7e22ce',
+          50: '#f5f3ff',
+          100: '#ede9fe',
+          200: '#ddd6fe',
+          400: '#a78bfa',
+          500: '#7c3aed',
+          600: '#6d28d9',
+          700: '#5b21b6',
+          800: '#4c1d95',
         },
       },
       keyframes: {
