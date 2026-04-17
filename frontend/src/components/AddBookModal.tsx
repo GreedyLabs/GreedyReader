@@ -59,7 +59,6 @@ export default function AddBookModal({ onClose }: Props) {
 
   const handleSelect = (book: BookSearchResult) => {
     setSelected(book)
-    window.scrollTo({ top: 0 })
   }
 
   const handleAdd = async () => {

@@ -61,22 +61,42 @@ export default function BarcodeScanner({ onDetect, onClose }: Props) {
 
       if (!stopped) setState('scanning')
 
+      // 같은 값이 연속 2회 감지돼야 확정 (흔들림·블러로 인한 오독 방지)
+      let lastValue = ''
+      let hitCount = 0
+      let detecting = false
+
       const scan = async () => {
-        if (stopped || !videoRef.current) return
+        if (stopped || !videoRef.current || detecting) return
+        detecting = true
         try {
           const barcodes = await detector.detect(videoRef.current)
+          let matched = false
           for (const barcode of barcodes) {
             if (ISBN_PATTERN.test(barcode.rawValue)) {
-              stopped = true
-              onDetectRef.current(barcode.rawValue)
-              return
+              matched = true
+              if (barcode.rawValue === lastValue) {
+                hitCount++
+                if (hitCount >= 2) {
+                  stopped = true
+                  onDetectRef.current(barcode.rawValue)
+                  return
+                }
+              } else {
+                lastValue = barcode.rawValue
+                hitCount = 1
+              }
+              break
             }
           }
+          if (!matched) { lastValue = ''; hitCount = 0 }
         } catch { /* 프레임 처리 에러 무시 */ }
-        if (!stopped) rafId = requestAnimationFrame(() => void scan())
+        detecting = false
+        // 200ms 간격으로 스캔 — 카메라 30fps 기준 6프레임 대기, CPU 절감
+        if (!stopped) rafId = window.setTimeout(() => void scan(), 200) as unknown as number
       }
 
-      rafId = requestAnimationFrame(() => void scan())
+      void scan()
     }
 
     // ── 방법 2: ZXing 폴백 (네이티브 API 미지원 브라우저)
@@ -127,7 +147,7 @@ export default function BarcodeScanner({ onDetect, onClose }: Props) {
 
     return () => {
       stopped = true
-      cancelAnimationFrame(rafId)
+      clearTimeout(rafId)
       mediaStream?.getTracks().forEach(t => t.stop())
       controlsRef.current?.stop()
     }
