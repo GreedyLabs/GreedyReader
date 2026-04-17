@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { UserButton } from '@clerk/react'
 import { cn } from '@/lib/utils'
 import InstallPrompt from '@/components/InstallPrompt'
+import UpdatePrompt from '@/components/UpdatePrompt'
 
 const NAV_ITEMS = [
   { to: '/', label: '서재', icon: '📚', end: true },
@@ -69,6 +70,7 @@ export default function Layout() {
       </div>
 
       <InstallPrompt />
+      <UpdatePrompt />
 
       {/* ── 모바일 하단 탭바 (md 미만에서만 표시) ── */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-gray-100">

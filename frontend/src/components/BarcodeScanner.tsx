@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { BrowserMultiFormatReader } from '@zxing/browser'
-import type { IScannerControls } from '@zxing/browser'
 
 const ISBN_PATTERN = /^97[89]\d{10}$/
 
@@ -24,14 +23,26 @@ interface BarcodeDetectorConstructor {
 }
 declare const BarcodeDetector: BarcodeDetectorConstructor
 
+// 스캔 가이드 박스가 화면 중앙에 있으므로 중앙 60%×40%만 크롭
+// 바코드가 이미지에서 차지하는 비율이 높아질수록 인식률이 크게 향상됨
+function cropFrame(video: HTMLVideoElement, canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
+  const sw = video.videoWidth
+  const sh = video.videoHeight
+  const cw = Math.floor(sw * 0.6)
+  const ch = Math.floor(sh * 0.4)
+  const cx = Math.floor((sw - cw) / 2)
+  const cy = Math.floor((sh - ch) / 2)
+  if (canvas.width !== cw) canvas.width = cw
+  if (canvas.height !== ch) canvas.height = ch
+  ctx.drawImage(video, cx, cy, cw, ch, 0, 0, cw, ch)
+}
+
 export default function BarcodeScanner({ onDetect, onClose }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const controlsRef = useRef<IScannerControls | null>(null)
   const onDetectRef = useRef(onDetect)
   const [state, setState] = useState<ScanState>('starting')
   const [errorMsg, setErrorMsg] = useState('')
 
-  // 렌더마다 최신 콜백 유지 (effect 재시작 없이)
   onDetectRef.current = onDetect
 
   useEffect(() => {
@@ -39,114 +50,108 @@ export default function BarcodeScanner({ onDetect, onClose }: Props) {
     let timerId: ReturnType<typeof setTimeout>
     let mediaStream: MediaStream | null = null
 
-    // ── 방법 1: 네이티브 BarcodeDetector + canvas 캡처
-    // Samsung Internet / Chrome에서 video 직접 전달 시 readyState 타이밍 문제가 있어
-    // canvas에 프레임을 캡처해서 전달하면 안정적으로 동작함
-    async function startNativeDetector() {
-      // EAN 포맷 지정 시도, 실패하면 포맷 제한 없이 생성
-      let detector: BarcodeDetectorInstance
-      try {
-        detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8'] })
-      } catch {
-        detector = new BarcodeDetector()
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
+    async function openCamera(): Promise<MediaStream> {
+      return navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: 'environment' },
           width: { ideal: 1280 },
           height: { ideal: 720 },
         },
       })
-      mediaStream = stream
+    }
 
-      if (stopped) { stream.getTracks().forEach(t => t.stop()); return }
-      if (!videoRef.current) { stream.getTracks().forEach(t => t.stop()); return }
-
+    async function attachStream(stream: MediaStream) {
+      if (!videoRef.current) return false
       videoRef.current.srcObject = stream
       await videoRef.current.play()
+      return true
+    }
 
+    // ── 방법 1: 네이티브 BarcodeDetector (Samsung Internet 13+, Chrome 83+)
+    async function startNativeDetector() {
+      let detector: BarcodeDetectorInstance
+      try {
+        detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8'] })
+      } catch {
+        // 포맷 미지원 시 전체 포맷으로 폴백
+        detector = new BarcodeDetector()
+      }
+
+      const stream = await openCamera()
+      mediaStream = stream
+      if (stopped || !await attachStream(stream)) { stream.getTracks().forEach(t => t.stop()); return }
       if (!stopped) setState('scanning')
 
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')!
 
-      // 같은 ISBN이 연속 2회 감지되면 확정 (블러/흔들림 오독 방지)
-      let lastValue = ''
-      let hitCount = 0
-
-      const captureAndScan = async () => {
+      const scan = async () => {
         if (stopped || !videoRef.current) return
-
         const video = videoRef.current
 
-        // 아직 프레임 데이터가 없으면 재시도
         if (video.readyState < 2 || video.videoWidth === 0) {
-          timerId = setTimeout(captureAndScan, 100)
+          timerId = setTimeout(scan, 100)
           return
         }
 
-        // 비디오 크기에 맞게 canvas 설정
-        if (canvas.width !== video.videoWidth) canvas.width = video.videoWidth
-        if (canvas.height !== video.videoHeight) canvas.height = video.videoHeight
-        ctx.drawImage(video, 0, 0)
+        cropFrame(video, canvas, ctx)
 
         try {
           const barcodes = await detector.detect(canvas)
-          let matched = false
           for (const barcode of barcodes) {
             if (ISBN_PATTERN.test(barcode.rawValue)) {
-              matched = true
-              if (barcode.rawValue === lastValue) {
-                hitCount++
-                if (hitCount >= 2) {
-                  stopped = true
-                  onDetectRef.current(barcode.rawValue)
-                  return
-                }
-              } else {
-                lastValue = barcode.rawValue
-                hitCount = 1
-              }
-              break
+              stopped = true
+              onDetectRef.current(barcode.rawValue)
+              return
             }
           }
-          if (!matched) { lastValue = ''; hitCount = 0 }
-        } catch { /* 프레임 처리 오류는 무시하고 계속 스캔 */ }
+        } catch { /* 프레임 처리 오류 무시 */ }
 
-        timerId = setTimeout(captureAndScan, 250)
+        timerId = setTimeout(scan, 150)
       }
 
-      // 카메라 안정화를 위해 500ms 후 스캔 시작
-      timerId = setTimeout(captureAndScan, 500)
+      // 카메라 안정화 후 스캔 시작
+      timerId = setTimeout(scan, 300)
     }
 
-    // ── 방법 2: ZXing 폴백 (BarcodeDetector 미지원 브라우저)
+    // ── 방법 2: ZXing canvas 루프 폴백 (BarcodeDetector 미지원 브라우저)
     async function startZxing() {
       if (!videoRef.current) return
       const reader = new BrowserMultiFormatReader()
 
-      controlsRef.current = await reader.decodeFromConstraints(
-        {
-          video: {
-            facingMode: { ideal: 'environment' },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            advanced: [{ focusMode: 'continuous' } as MediaTrackConstraintSet],
-          },
-        },
-        videoRef.current,
-        (result, _error) => {
-          if (stopped || !result) return
-          const text = result.getText()
-          if (!ISBN_PATTERN.test(text)) return
-          stopped = true
-          controlsRef.current?.stop()
-          onDetectRef.current(text)
-        },
-      )
-
+      const stream = await openCamera()
+      mediaStream = stream
+      if (stopped || !await attachStream(stream)) { stream.getTracks().forEach(t => t.stop()); return }
       if (!stopped) setState('scanning')
+
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')!
+
+      const scan = () => {
+        if (stopped || !videoRef.current) return
+        const video = videoRef.current
+
+        if (video.readyState < 2 || video.videoWidth === 0) {
+          timerId = setTimeout(scan, 100)
+          return
+        }
+
+        cropFrame(video, canvas, ctx)
+
+        try {
+          const result = reader.decodeFromCanvas(canvas)
+          const text = result.getText()
+          if (ISBN_PATTERN.test(text)) {
+            stopped = true
+            onDetectRef.current(text)
+            return
+          }
+        } catch { /* NotFoundException 등 무시 */ }
+
+        timerId = setTimeout(scan, 150)
+      }
+
+      timerId = setTimeout(scan, 300)
     }
 
     async function start() {
@@ -175,7 +180,6 @@ export default function BarcodeScanner({ onDetect, onClose }: Props) {
       stopped = true
       clearTimeout(timerId)
       mediaStream?.getTracks().forEach(t => t.stop())
-      controlsRef.current?.stop()
     }
   }, [])
 
