@@ -29,6 +29,12 @@ export function usePWAInstall() {
   const [installed, setInstalled] = useState<boolean>(isStandalone)
 
   useEffect(() => {
+    // React 마운트 전에 main.tsx에서 미리 캡처한 이벤트 확인
+    if (window.__pwaInstallPrompt && !isDismissRecent()) {
+      setDeferredPrompt(window.__pwaInstallPrompt as BeforeInstallPromptEvent)
+      window.__pwaInstallPrompt = null
+    }
+
     const onBeforeInstallPrompt = (e: Event) => {
       e.preventDefault()
       if (isDismissRecent()) return

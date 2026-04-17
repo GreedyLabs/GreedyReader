@@ -11,6 +11,20 @@ interface Props {
   onClose: () => void
 }
 
+// 네이티브 BarcodeDetector API 타입 (Chrome 83+, Samsung Internet 13+)
+interface BarcodeDetectorResult {
+  rawValue: string
+  format: string
+}
+interface NativeBarcodeDetector {
+  detect(image: HTMLVideoElement): Promise<BarcodeDetectorResult[]>
+}
+declare const BarcodeDetector: {
+  new (options?: { formats: string[] }): NativeBarcodeDetector
+}
+
+const hasNativeBarcodeDetector = () => 'BarcodeDetector' in window
+
 export default function BarcodeScanner({ onDetect, onClose }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const controlsRef = useRef<IScannerControls | null>(null)
@@ -22,37 +36,84 @@ export default function BarcodeScanner({ onDetect, onClose }: Props) {
   onDetectRef.current = onDetect
 
   useEffect(() => {
-    const reader = new BrowserMultiFormatReader()
     let stopped = false
+    let rafId: number
+    let mediaStream: MediaStream | null = null
+
+    // ── 방법 1: 네이티브 BarcodeDetector (Samsung Internet 13+, Chrome 83+)
+    async function startNativeDetector() {
+      const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'code_128'] })
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      })
+      mediaStream = stream
+
+      if (stopped) { stream.getTracks().forEach(t => t.stop()); return }
+      if (!videoRef.current) { stream.getTracks().forEach(t => t.stop()); return }
+
+      videoRef.current.srcObject = stream
+      await videoRef.current.play()
+
+      if (!stopped) setState('scanning')
+
+      const scan = async () => {
+        if (stopped || !videoRef.current) return
+        try {
+          const barcodes = await detector.detect(videoRef.current)
+          for (const barcode of barcodes) {
+            if (ISBN_PATTERN.test(barcode.rawValue)) {
+              stopped = true
+              onDetectRef.current(barcode.rawValue)
+              return
+            }
+          }
+        } catch { /* 프레임 처리 에러 무시 */ }
+        if (!stopped) rafId = requestAnimationFrame(() => void scan())
+      }
+
+      rafId = requestAnimationFrame(() => void scan())
+    }
+
+    // ── 방법 2: ZXing 폴백 (네이티브 API 미지원 브라우저)
+    async function startZxing() {
+      if (!videoRef.current) return
+      const reader = new BrowserMultiFormatReader()
+
+      controlsRef.current = await reader.decodeFromConstraints(
+        {
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            advanced: [{ focusMode: 'continuous' } as MediaTrackConstraintSet],
+          },
+        },
+        videoRef.current,
+        (result, _error) => {
+          if (stopped || !result) return
+          const text = result.getText()
+          if (!ISBN_PATTERN.test(text)) return
+          stopped = true
+          controlsRef.current?.stop()
+          onDetectRef.current(text)
+        },
+      )
+
+      if (!stopped) setState('scanning')
+    }
 
     async function start() {
-      if (!videoRef.current) return
-
       try {
-        controlsRef.current = await reader.decodeFromConstraints(
-          {
-            video: {
-              facingMode: { ideal: 'environment' },
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-              // 연속 오토포커스 — 바코드에 포커스가 잡히게 함
-              advanced: [{ focusMode: 'continuous' } as MediaTrackConstraintSet],
-            },
-          },
-          videoRef.current,
-          (result, _error) => {
-            if (stopped || !result) return
-
-            const text = result.getText()
-            if (!ISBN_PATTERN.test(text)) return
-
-            stopped = true
-            controlsRef.current?.stop()
-            onDetectRef.current(text)
-          },
-        )
-
-        if (!stopped) setState('scanning')
+        if (hasNativeBarcodeDetector()) {
+          await startNativeDetector()
+        } else {
+          await startZxing()
+        }
       } catch (err) {
         if (stopped) return
         const msg = err instanceof Error ? err.message : String(err)
@@ -66,6 +127,8 @@ export default function BarcodeScanner({ onDetect, onClose }: Props) {
 
     return () => {
       stopped = true
+      cancelAnimationFrame(rafId)
+      mediaStream?.getTracks().forEach(t => t.stop())
       controlsRef.current?.stop()
     }
   }, [])
