@@ -48,5 +48,6 @@ addColumn('ALTER TABLE books ADD COLUMN isbn TEXT')
 addColumn('ALTER TABLE books ADD COLUMN publisher TEXT')
 addColumn('ALTER TABLE books ADD COLUMN pubdate TEXT')
 addColumn('ALTER TABLE books ADD COLUMN description TEXT')
+addColumn('ALTER TABLE books ADD COLUMN read_count INTEGER NOT NULL DEFAULT 1')
 
 export const db = drizzle(sqlite, { schema })

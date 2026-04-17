@@ -296,6 +296,13 @@ export default function BooksPage() {
                   >
                     {STATUS_LABEL[book.status]}
                   </span>
+
+                  {/* 환독 뱃지 */}
+                  {(book.readCount ?? 1) >= 2 && (
+                    <span className="absolute top-2 left-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-black/50 text-white">
+                      {book.readCount}독
+                    </span>
+                  )}
                 </div>
 
                 {/* 하단 정보 */}

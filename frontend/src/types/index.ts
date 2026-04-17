@@ -12,6 +12,7 @@ export interface Book {
   startDate?: string
   endDate?: string
   rating?: number // 1-5
+  readCount: number // 몇 번째 읽기인지 (기본 1)
   status: 'reading' | 'completed' | 'wish'
   lastMemoAt?: string | null
   createdAt: string

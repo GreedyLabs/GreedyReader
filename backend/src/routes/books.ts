@@ -21,6 +21,7 @@ const CreateBookSchema = z.object({
   startDate: z.string().date().optional(),
   endDate: z.string().date().optional(),
   rating: z.number().int().min(1).max(5).optional(),
+  readCount: z.number().int().min(1).default(1),
 })
 
 const UpdateBookSchema = CreateBookSchema.partial()

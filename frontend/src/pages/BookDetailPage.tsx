@@ -165,12 +165,19 @@ export default function BookDetailPage() {
                 ].filter(Boolean).join(' | ')}
               </p>
             )}
-            <span className={cn(
-              'mt-2 inline-block text-[11px] font-bold px-2.5 py-1 rounded-full',
-              STATUS_BADGE[book.status],
-            )}>
-              {STATUS_LABEL[book.status]}
-            </span>
+            <div className="flex items-center gap-1.5 mt-2">
+              <span className={cn(
+                'inline-block text-[11px] font-bold px-2.5 py-1 rounded-full',
+                STATUS_BADGE[book.status],
+              )}>
+                {STATUS_LABEL[book.status]}
+              </span>
+              {(book.readCount ?? 1) >= 2 && (
+                <span className="inline-block text-[11px] font-bold px-2.5 py-1 rounded-full bg-gray-800 text-white">
+                  {book.readCount}독
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

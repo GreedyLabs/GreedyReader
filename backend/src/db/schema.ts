@@ -15,6 +15,7 @@ export const books = sqliteTable('books', {
     .notNull()
     .default('wish'),
   rating: integer('rating'), // 1–5
+  readCount: integer('read_count').notNull().default(1), // 몇 번째 읽기인지
   startDate: text('start_date'), // ISO date (YYYY-MM-DD)
   endDate: text('end_date'),
   lastMemoAt: text('last_memo_at'), // 가장 최근 메모 작성 시각 (메모 추가 시 자동 갱신)
