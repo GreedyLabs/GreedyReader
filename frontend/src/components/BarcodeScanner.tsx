@@ -16,14 +16,13 @@ interface BarcodeDetectorResult {
   rawValue: string
   format: string
 }
-interface NativeBarcodeDetector {
-  detect(image: HTMLVideoElement): Promise<BarcodeDetectorResult[]>
+interface BarcodeDetectorInstance {
+  detect(source: HTMLCanvasElement): Promise<BarcodeDetectorResult[]>
 }
-declare const BarcodeDetector: {
-  new (options?: { formats: string[] }): NativeBarcodeDetector
+interface BarcodeDetectorConstructor {
+  new(options?: { formats: string[] }): BarcodeDetectorInstance
 }
-
-const hasNativeBarcodeDetector = () => 'BarcodeDetector' in window
+declare const BarcodeDetector: BarcodeDetectorConstructor
 
 export default function BarcodeScanner({ onDetect, onClose }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -37,12 +36,20 @@ export default function BarcodeScanner({ onDetect, onClose }: Props) {
 
   useEffect(() => {
     let stopped = false
-    let rafId: number
+    let timerId: ReturnType<typeof setTimeout>
     let mediaStream: MediaStream | null = null
 
-    // ── 방법 1: 네이티브 BarcodeDetector (Samsung Internet 13+, Chrome 83+)
+    // ── 방법 1: 네이티브 BarcodeDetector + canvas 캡처
+    // Samsung Internet / Chrome에서 video 직접 전달 시 readyState 타이밍 문제가 있어
+    // canvas에 프레임을 캡처해서 전달하면 안정적으로 동작함
     async function startNativeDetector() {
-      const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'code_128'] })
+      // EAN 포맷 지정 시도, 실패하면 포맷 제한 없이 생성
+      let detector: BarcodeDetectorInstance
+      try {
+        detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8'] })
+      } catch {
+        detector = new BarcodeDetector()
+      }
 
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -61,16 +68,31 @@ export default function BarcodeScanner({ onDetect, onClose }: Props) {
 
       if (!stopped) setState('scanning')
 
-      // 같은 값이 연속 2회 감지돼야 확정 (흔들림·블러로 인한 오독 방지)
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')!
+
+      // 같은 ISBN이 연속 2회 감지되면 확정 (블러/흔들림 오독 방지)
       let lastValue = ''
       let hitCount = 0
-      let detecting = false
 
-      const scan = async () => {
-        if (stopped || !videoRef.current || detecting) return
-        detecting = true
+      const captureAndScan = async () => {
+        if (stopped || !videoRef.current) return
+
+        const video = videoRef.current
+
+        // 아직 프레임 데이터가 없으면 재시도
+        if (video.readyState < 2 || video.videoWidth === 0) {
+          timerId = setTimeout(captureAndScan, 100)
+          return
+        }
+
+        // 비디오 크기에 맞게 canvas 설정
+        if (canvas.width !== video.videoWidth) canvas.width = video.videoWidth
+        if (canvas.height !== video.videoHeight) canvas.height = video.videoHeight
+        ctx.drawImage(video, 0, 0)
+
         try {
-          const barcodes = await detector.detect(videoRef.current)
+          const barcodes = await detector.detect(canvas)
           let matched = false
           for (const barcode of barcodes) {
             if (ISBN_PATTERN.test(barcode.rawValue)) {
@@ -90,16 +112,16 @@ export default function BarcodeScanner({ onDetect, onClose }: Props) {
             }
           }
           if (!matched) { lastValue = ''; hitCount = 0 }
-        } catch { /* 프레임 처리 에러 무시 */ }
-        detecting = false
-        // 200ms 간격으로 스캔 — 카메라 30fps 기준 6프레임 대기, CPU 절감
-        if (!stopped) rafId = window.setTimeout(() => void scan(), 200) as unknown as number
+        } catch { /* 프레임 처리 오류는 무시하고 계속 스캔 */ }
+
+        timerId = setTimeout(captureAndScan, 250)
       }
 
-      void scan()
+      // 카메라 안정화를 위해 500ms 후 스캔 시작
+      timerId = setTimeout(captureAndScan, 500)
     }
 
-    // ── 방법 2: ZXing 폴백 (네이티브 API 미지원 브라우저)
+    // ── 방법 2: ZXing 폴백 (BarcodeDetector 미지원 브라우저)
     async function startZxing() {
       if (!videoRef.current) return
       const reader = new BrowserMultiFormatReader()
@@ -129,7 +151,7 @@ export default function BarcodeScanner({ onDetect, onClose }: Props) {
 
     async function start() {
       try {
-        if (hasNativeBarcodeDetector()) {
+        if ('BarcodeDetector' in window) {
           await startNativeDetector()
         } else {
           await startZxing()
@@ -138,7 +160,11 @@ export default function BarcodeScanner({ onDetect, onClose }: Props) {
         if (stopped) return
         const msg = err instanceof Error ? err.message : String(err)
         const isDenied = msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('denied')
-        setErrorMsg(isDenied ? '카메라 권한이 필요해요. 브라우저 설정에서 허용해주세요.' : `카메라를 시작할 수 없어요.\n${msg}`)
+        setErrorMsg(
+          isDenied
+            ? '카메라 권한이 필요해요. 브라우저 설정에서 허용해주세요.'
+            : `카메라를 시작할 수 없어요.\n${msg}`,
+        )
         setState('error')
       }
     }
@@ -147,7 +173,7 @@ export default function BarcodeScanner({ onDetect, onClose }: Props) {
 
     return () => {
       stopped = true
-      clearTimeout(rafId)
+      clearTimeout(timerId)
       mediaStream?.getTracks().forEach(t => t.stop())
       controlsRef.current?.stop()
     }
@@ -183,18 +209,12 @@ export default function BarcodeScanner({ onDetect, onClose }: Props) {
         {/* 스캔 가이드 오버레이 */}
         {state === 'scanning' && (
           <div className="absolute inset-0 flex items-center justify-center">
-            {/* 어두운 배경 마스크 */}
             <div className="absolute inset-0 bg-black/40" />
-
-            {/* 스캔 영역 */}
             <div className="relative w-72 h-40">
-              {/* 코너 마커 */}
               <span className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-white rounded-tl" />
               <span className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-white rounded-tr" />
               <span className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-white rounded-bl" />
               <span className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-white rounded-br" />
-
-              {/* 스캔 라인 */}
               <div className="absolute inset-x-0 h-0.5 bg-brand-400 animate-scan-line" />
             </div>
           </div>

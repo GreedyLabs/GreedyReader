@@ -63,7 +63,7 @@ export default function Layout() {
         </header>
 
         {/* 스크롤 가능한 콘텐츠 — 모바일은 하단 탭바 높이만큼 여백 */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto pb-20 md:pb-0">
+        <main className="flex-1 overflow-auto pb-20 md:pb-0">
           <Outlet />
         </main>
       </div>
