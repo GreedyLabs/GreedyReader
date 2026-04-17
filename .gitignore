@@ -12,3 +12,4 @@ dist
 *.db-wal
 CLAUDE.md
 ROADMAP.md
+.claude

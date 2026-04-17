@@ -3,6 +3,9 @@ import { cn } from '@/lib/utils'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useBookSearch } from '@/hooks/useBookSearch'
 import { useCreateBook } from '@/hooks/useBooks'
+import { detectGenre } from '@/lib/genres'
+import type { GenreId } from '@/lib/genres'
+import GenrePicker from '@/components/GenrePicker'
 import type { Book, BookSearchResult } from '@/types'
 
 interface Props {
@@ -19,6 +22,7 @@ export default function AddBookModal({ onClose }: Props) {
   const [query, setQuery]       = useState('')
   const [selected, setSelected] = useState<BookSearchResult | null>(null)
   const [status, setStatus]     = useState<Book['status']>('wish')
+  const [genre, setGenre]       = useState<GenreId | undefined>(undefined)
 
   const debouncedQuery = useDebounce(query, 400)
   const {
@@ -51,6 +55,7 @@ export default function AddBookModal({ onClose }: Props) {
 
   const handleSelect = (book: BookSearchResult) => {
     setSelected(book)
+    setGenre(detectGenre(book.description ?? '', book.title))
   }
 
   const handleAdd = async () => {
@@ -64,6 +69,7 @@ export default function AddBookModal({ onClose }: Props) {
       pubdate:     selected.pubdate || undefined,
       description: selected.description || undefined,
       status,
+      genre,
     })
     onClose()
   }
@@ -142,6 +148,12 @@ export default function AddBookModal({ onClose }: Props) {
                 <span>{opt.label}</span>
               </button>
             ))}
+          </div>
+
+          {/* 장르 선택 */}
+          <div className="mt-3">
+            <p className="text-xs text-gray-400 mb-2">장르 <span className="text-gray-300">(선택)</span></p>
+            <GenrePicker value={genre} onChange={setGenre} />
           </div>
 
           <button

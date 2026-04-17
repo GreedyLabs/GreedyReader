@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { getBookColor } from '@/lib/bookColor'
+import GenrePicker from '@/components/GenrePicker'
+import type { GenreId } from '@/lib/genres'
 import { useBooks, useUpdateBook, useDeleteBook } from '@/hooks/useBooks'
 import { useBookMemos, useCreateMemo, useDeleteMemo } from '@/hooks/useMemos'
 import type { Book } from '@/types'
@@ -224,6 +226,15 @@ export default function BookDetailPage() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* ── 장르 ── */}
+        <div>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">장르</p>
+          <GenrePicker
+            value={book.genre as GenreId | undefined}
+            onChange={(id) => updateBook.mutate({ id: book.id, data: { genre: id } })}
+          />
         </div>
 
         {/* ── 독서 기록 ── */}
