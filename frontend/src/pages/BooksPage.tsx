@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import { getBookColor } from '@/lib/bookColor'
 import { useBooks } from '@/hooks/useBooks'
 import AddBookModal from '@/components/AddBookModal'
+import { IconPlus, IconLibrary, IconOpenBook, IconStar } from '@/components/icons'
 import type { Book } from '@/types'
 
 // ── 필터 ──────────────────────────────────────────────
@@ -111,7 +112,7 @@ export default function BooksPage() {
           onClick={() => setShowAddModal(true)}
           className="flex items-center gap-1.5 px-4 py-2.5 gradient-brand text-white text-sm font-semibold rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-sm"
         >
-          <span>+</span> 책 추가
+          <IconPlus size={14} /> 책 추가
         </button>
       </div>
 
@@ -221,7 +222,7 @@ export default function BooksPage() {
       {/* ── 상태 ── */}
       {isLoading && (
         <div className="flex flex-col items-center py-24 text-gray-300">
-          <span className="text-5xl mb-3">📚</span>
+          <IconLibrary size={48} className="mb-3" />
           <p className="text-sm">불러오는 중...</p>
         </div>
       )}
@@ -232,7 +233,7 @@ export default function BooksPage() {
       )}
       {!isLoading && !isError && displayBooks.length === 0 && (
         <div className="flex flex-col items-center py-24 text-gray-300">
-          <span className="text-5xl mb-3">📖</span>
+          <IconOpenBook size={48} className="mb-3" />
           <p className="text-sm text-gray-400">
             {filter === 'all' ? '첫 번째 책을 추가해보세요' : '해당하는 책이 없어요'}
           </p>
@@ -312,14 +313,13 @@ export default function BooksPage() {
                   {book.pubdate && (
                     <p className="text-[10px] text-gray-300 mt-0.5">{book.pubdate.slice(0, 4)}</p>
                   )}
-                  {book.rating ? (
-                    <p className="text-[10px] text-amber-400 mt-1">
-                      {'★'.repeat(book.rating)}
-                      <span className="text-gray-200">{'★'.repeat(5 - book.rating)}</span>
-                    </p>
-                  ) : (
-                    <p className="text-[10px] text-gray-200 mt-1">★★★★★</p>
-                  )}
+                  <div className="flex gap-0.5 mt-1">
+                    {[1, 2, 3, 4, 5].map((r) => (
+                      <span key={r} className={(book.rating ?? 0) >= r ? 'text-amber-400' : 'text-gray-200'}>
+                        <IconStar size={9} filled={(book.rating ?? 0) >= r} />
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             )

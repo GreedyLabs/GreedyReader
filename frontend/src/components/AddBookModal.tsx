@@ -9,6 +9,7 @@ import { memosApi } from '@/lib/api'
 import { detectGenre } from '@/lib/genres'
 import type { GenreId } from '@/lib/genres'
 import GenrePicker from '@/components/GenrePicker'
+import { IconClose, IconSearch, IconLibrary, IconBookmark, IconOpenBook, IconCheck, IconStar, IconBarcode, IconMic, IconNote } from '@/components/icons'
 import type { Book, BookSearchResult } from '@/types'
 
 const STATUS_LABEL: Record<Book['status'], string> = {
@@ -26,10 +27,16 @@ interface Props {
   onClose: () => void
 }
 
-const STATUS_OPTIONS: { value: Book['status']; label: string; emoji: string }[] = [
-  { value: 'wish',      label: '읽고 싶어요', emoji: '🔖' },
-  { value: 'reading',   label: '읽는 중',     emoji: '📖' },
-  { value: 'completed', label: '완독',         emoji: '✅' },
+const STATUS_ICONS: Record<Book['status'], React.ReactNode> = {
+  wish:      <IconBookmark size={16} />,
+  reading:   <IconOpenBook size={16} />,
+  completed: <IconCheck size={16} />,
+}
+
+const STATUS_OPTIONS: { value: Book['status']; label: string }[] = [
+  { value: 'wish',      label: '읽고 싶어요' },
+  { value: 'reading',   label: '읽는 중' },
+  { value: 'completed', label: '완독' },
 ]
 
 export default function AddBookModal({ onClose }: Props) {
@@ -147,7 +154,7 @@ export default function AddBookModal({ onClose }: Props) {
           className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-gray-500"
           aria-label="닫기"
         >
-          ✕
+          <IconClose size={18} />
         </button>
         <h2 className="text-base font-bold text-gray-900">책 추가</h2>
       </div>
@@ -155,7 +162,7 @@ export default function AddBookModal({ onClose }: Props) {
       {/* ── 검색 입력 ── */}
       <div className="px-4 py-3 shrink-0">
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><IconSearch size={16} /></span>
           <input
             type="search"
             value={query}
@@ -170,6 +177,27 @@ export default function AddBookModal({ onClose }: Props) {
           />
         </div>
       </div>
+
+      {/* ── 빠른 추가 옵션 ── */}
+      {!selected && (
+        <div className="px-4 pb-2 shrink-0">
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: '바코드 스캔', Icon: IconBarcode },
+              { label: '보이스 입력', Icon: IconMic },
+              { label: '직접 입력',  Icon: IconNote },
+            ].map(({ label, Icon }) => (
+              <button
+                key={label}
+                className="flex flex-col items-center gap-1.5 p-3 bg-gray-50 rounded-2xl border border-gray-100 text-gray-600 hover:border-violet-300 hover:bg-violet-50 transition-colors"
+              >
+                <Icon size={22} />
+                <span className="text-[11px] font-semibold">{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── 선택된 책 미리보기 ── */}
       {selected && (
@@ -198,9 +226,12 @@ export default function AddBookModal({ onClose }: Props) {
                       {STATUS_LABEL[duplicate.status]}
                     </span>
                     {duplicate.rating && (
-                      <span className="text-[11px] text-amber-400">
-                        {'★'.repeat(duplicate.rating)}
-                        <span className="text-gray-200">{'★'.repeat(5 - duplicate.rating)}</span>
+                      <span className="flex gap-0.5">
+                        {[1,2,3,4,5].map((r) => (
+                          <span key={r} className={(duplicate.rating ?? 0) >= r ? 'text-amber-400' : 'text-gray-200'}>
+                            <IconStar size={11} filled={(duplicate.rating ?? 0) >= r} />
+                          </span>
+                        ))}
                       </span>
                     )}
                   </div>
@@ -268,7 +299,7 @@ export default function AddBookModal({ onClose }: Props) {
                         : 'bg-white text-gray-500 border border-gray-200',
                     )}
                   >
-                    <span>{opt.emoji}</span>
+                    {STATUS_ICONS[opt.value]}
                     <span>{opt.label}</span>
                   </button>
                 ))}
@@ -293,9 +324,9 @@ export default function AddBookModal({ onClose }: Props) {
                             key={r}
                             type="button"
                             onClick={() => setRating(rating === r ? undefined : r)}
-                            className="text-xl leading-none"
+                            className={(rating ?? 0) >= r ? 'text-amber-400' : 'text-gray-200'}
                           >
-                            <span className={(rating ?? 0) >= r ? 'text-amber-400' : 'text-gray-200'}>★</span>
+                            <IconStar size={20} filled={(rating ?? 0) >= r} />
                           </button>
                         ))}
                       </div>
@@ -353,7 +384,7 @@ export default function AddBookModal({ onClose }: Props) {
         {/* 안내 문구 */}
         {debouncedQuery.length < 2 && !selected && (
           <div className="flex flex-col items-center justify-center h-48 gap-3 text-gray-300">
-            <span className="text-4xl">📚</span>
+            <IconLibrary size={44} />
             <p className="text-sm">두 글자 이상 입력해서 검색하세요</p>
           </div>
         )}
@@ -368,7 +399,7 @@ export default function AddBookModal({ onClose }: Props) {
         {/* 결과 없음 */}
         {!isSearching && debouncedQuery.length >= 2 && results.length === 0 && (
           <div className="flex flex-col items-center justify-center h-48 text-gray-300">
-            <span className="text-4xl mb-2">🔍</span>
+            <IconSearch size={44} className="mb-2" />
             <p className="text-sm text-gray-400">검색 결과가 없어요</p>
           </div>
         )}
@@ -415,7 +446,7 @@ export default function AddBookModal({ onClose }: Props) {
               </div>
 
               {selected?.isbn === book.isbn && (
-                <span className="shrink-0 self-center text-brand-600 text-lg">✓</span>
+                <span className="shrink-0 self-center text-brand-600"><IconCheck size={18} /></span>
               )}
             </button>
           )

@@ -1,42 +1,43 @@
-import { useMemo } from 'react'
-import { useBooks } from '@/hooks/useBooks'
-import { GENRES, GENRE_COLOR, GENRE_LABEL } from '@/lib/genres'
-import type { GenreId } from '@/lib/genres'
+import { useMemo } from 'react';
+import { useBooks } from '@/hooks/useBooks';
+import { GENRES, GENRE_COLOR, GENRE_LABEL } from '@/lib/genres';
+import type { GenreId } from '@/lib/genres';
+import { IconLibrary, IconCheck, IconStar, IconAI } from '@/components/icons';
 
-const MONTH_LABELS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+const MONTH_LABELS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
 
 export default function StatsPage() {
-  const { data: books = [], isLoading } = useBooks()
+  const { data: books = [], isLoading } = useBooks();
 
   const stats = useMemo(() => {
-    const thisYear = new Date().getFullYear()
+    const thisYear = new Date().getFullYear();
 
-    const completed = books.filter((b) => b.status === 'completed')
+    const completed = books.filter((b) => b.status === 'completed');
     const completedThisYear = completed.filter(
       (b) => b.endDate && new Date(b.endDate).getFullYear() === thisYear,
-    )
+    );
 
-    const ratings = completed.filter((b) => b.rating).map((b) => b.rating!)
-    const avgRating = ratings.length
-      ? ratings.reduce((s, r) => s + r, 0) / ratings.length
-      : 0
+    const ratings = completed.filter((b) => b.rating).map((b) => b.rating!);
+    const avgRating = ratings.length ? ratings.reduce((s, r) => s + r, 0) / ratings.length : 0;
 
     // 월별 완독 수 (올해 1~12월)
-    const monthlyCount = Array.from({ length: 12 }, (_, i) =>
-      completedThisYear.filter((b) => {
-        if (!b.endDate) return false
-        return new Date(b.endDate).getMonth() === i
-      }).length,
-    )
+    const monthlyCount = Array.from(
+      { length: 12 },
+      (_, i) =>
+        completedThisYear.filter((b) => {
+          if (!b.endDate) return false;
+          return new Date(b.endDate).getMonth() === i;
+        }).length,
+    );
 
     // 장르 분포 (장르 있는 책만)
-    const genreMap = new Map<GenreId, number>()
+    const genreMap = new Map<GenreId, number>();
     books.forEach((b) => {
-      if (!b.genre) return
-      const id = b.genre as GenreId
-      genreMap.set(id, (genreMap.get(id) ?? 0) + 1)
-    })
-    const genreTotal = Array.from(genreMap.values()).reduce((s, n) => s + n, 0)
+      if (!b.genre) return;
+      const id = b.genre as GenreId;
+      genreMap.set(id, (genreMap.get(id) ?? 0) + 1);
+    });
+    const genreTotal = Array.from(genreMap.values()).reduce((s, n) => s + n, 0);
     const genreData = Array.from(genreMap.entries())
       .sort((a, b) => b[1] - a[1])
       .map(([id, count]) => ({
@@ -44,25 +45,24 @@ export default function StatsPage() {
         label: GENRE_LABEL[id] ?? id,
         count,
         pct: genreTotal ? Math.round((count / genreTotal) * 100) : 0,
-      }))
+      }));
 
-    return { completed, completedThisYear, avgRating, monthlyCount, genreData, genreTotal }
-  }, [books])
+    return { completed, completedThisYear, avgRating, monthlyCount, genreData, genreTotal };
+  }, [books]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-48 text-gray-300 text-sm">
         불러오는 중...
       </div>
-    )
+    );
   }
 
-  const maxMonthly = Math.max(...stats.monthlyCount, 1)
-  const BAR_MAX_HEIGHT = 72 // px
+  const maxMonthly = Math.max(...stats.monthlyCount, 1);
+  const BAR_MAX_HEIGHT = 72; // px
 
   return (
     <div className="max-w-2xl mx-auto px-4 pt-5 pb-10">
-
       {/* ── 헤더 ── */}
       <div className="mb-6">
         <p className="text-xs text-gray-400 font-medium tracking-wider uppercase">Statistics</p>
@@ -71,16 +71,43 @@ export default function StatsPage() {
       </div>
 
       {/* ── 요약 카드 ── */}
-      <div className="grid grid-cols-3 gap-3 mb-5">
+      <div className="grid grid-cols-3 gap-2.5 mb-5">
         {[
-          { label: '전체',     value: `${books.length}권`,                          icon: '📚' },
-          { label: '올해 완독', value: `${stats.completedThisYear.length}권`,         icon: '✅' },
-          { label: '평균 별점', value: stats.avgRating ? `${stats.avgRating.toFixed(1)}` : '—', icon: '⭐' },
+          {
+            label: '전체',
+            value: books.length,
+            unit: '권',
+            Icon: IconLibrary,
+            color: 'text-violet-700',
+          },
+          {
+            label: '올해 완독',
+            value: stats.completedThisYear.length,
+            unit: '권',
+            Icon: IconCheck,
+            color: 'text-emerald-600',
+          },
+          {
+            label: '평균 별점',
+            value: stats.avgRating ? stats.avgRating.toFixed(1) : '—',
+            unit: '',
+            Icon: IconStar,
+            color: 'text-amber-500',
+            filled: true,
+          },
         ].map((s) => (
-          <div key={s.label} className="bg-white rounded-2xl border border-gray-100 p-4 text-center shadow-sm">
-            <div className="text-2xl mb-1">{s.icon}</div>
-            <div className="text-xl font-bold text-gray-900">{s.value}</div>
-            <div className="text-xs text-gray-400 mt-0.5">{s.label}</div>
+          <div
+            key={s.label}
+            className="bg-white rounded-2xl border border-gray-100 p-3.5 shadow-sm"
+          >
+            <div className={`${s.color} mb-2`}>
+              <s.Icon size={18} filled={'filled' in s ? s.filled : false} />
+            </div>
+            <div className="text-xl font-bold text-gray-900 leading-none">
+              {s.value}
+              <span className="text-[11px] text-gray-400 font-normal ml-0.5">{s.unit}</span>
+            </div>
+            <div className="text-[11px] text-gray-400 mt-1">{s.label}</div>
           </div>
         ))}
       </div>
@@ -93,7 +120,8 @@ export default function StatsPage() {
         ) : (
           <div className="flex items-end gap-1" style={{ height: `${BAR_MAX_HEIGHT + 28}px` }}>
             {stats.monthlyCount.map((count, i) => {
-              const barH = count > 0 ? Math.max(4, Math.round((count / maxMonthly) * BAR_MAX_HEIGHT)) : 2
+              const barH =
+                count > 0 ? Math.max(4, Math.round((count / maxMonthly) * BAR_MAX_HEIGHT)) : 2;
               return (
                 <div key={i} className="flex-1 flex flex-col items-center justify-end gap-1">
                   {count > 0 && (
@@ -103,14 +131,13 @@ export default function StatsPage() {
                     className="w-full rounded-t-md transition-all duration-500"
                     style={{
                       height: `${barH}px`,
-                      background: count > 0
-                        ? 'linear-gradient(to top, #5b21b6, #4338ca)'
-                        : '#f3f4f6',
+                      background:
+                        count > 0 ? 'linear-gradient(to top, #5b21b6, #4338ca)' : '#f3f4f6',
                     }}
                   />
                   <span className="text-[9px] text-gray-300 leading-none">{MONTH_LABELS[i]}</span>
                 </div>
-              )
+              );
             })}
           </div>
         )}
@@ -169,6 +196,21 @@ export default function StatsPage() {
         )}
       </div>
 
+      {/* ── AI 인사이트 ── */}
+      {books.length >= 3 && (
+        <div className="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <div className="flex items-center gap-1.5 text-violet-700 mb-2">
+            <IconAI size={14} />
+            <span className="text-[10px] tracking-widest uppercase font-bold">
+              AI 인사이트 (준비중)
+            </span>
+          </div>
+          <p className="text-sm text-gray-700 leading-relaxed italic">
+            "소설과 {stats.genreData[0]?.label ?? '논픽션'}을 번갈아 읽는 패턴이 인상적이에요.
+            꾸준히 독서 중이시네요."
+          </p>
+        </div>
+      )}
     </div>
-  )
+  );
 }

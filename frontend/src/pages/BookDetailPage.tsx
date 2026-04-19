@@ -6,6 +6,7 @@ import GenrePicker from '@/components/GenrePicker'
 import type { GenreId } from '@/lib/genres'
 import { useBooks, useUpdateBook, useDeleteBook } from '@/hooks/useBooks'
 import { useBookMemos, useCreateMemo, useDeleteMemo } from '@/hooks/useMemos'
+import { IconBack, IconStar, IconNote, IconPlus, IconMic } from '@/components/icons'
 import type { Book } from '@/types'
 
 // ── 뱃지 스타일 (BooksPage와 동일) ──────────────────────
@@ -122,7 +123,7 @@ export default function BookDetailPage() {
           onClick={() => navigate(-1)}
           className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 shrink-0"
         >
-          ←
+          <IconBack size={20} />
         </button>
         <h1 className="flex-1 text-sm font-bold text-gray-900 truncate">{book.title}</h1>
         <button
@@ -204,11 +205,9 @@ export default function BookDetailPage() {
               <button
                 key={r}
                 onClick={() => handleRating(r)}
-                className="text-2xl leading-none"
+                className={(book.rating ?? 0) >= r ? 'text-amber-400' : 'text-gray-200'}
               >
-                <span className={(book.rating ?? 0) >= r ? 'text-amber-400' : 'text-gray-200'}>
-                  ★
-                </span>
+                <IconStar size={24} filled={(book.rating ?? 0) >= r} />
               </button>
             ))}
           </div>
@@ -286,9 +285,9 @@ export default function BookDetailPage() {
             </p>
             <button
               onClick={() => setShowForm((v) => !v)}
-              className="text-xs font-semibold text-brand-600 hover:text-brand-700"
+              className="text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center gap-1"
             >
-              {showForm ? '취소' : '+ 메모 추가'}
+              {showForm ? '취소' : <><IconPlus size={12} /> 메모 추가</>}
             </button>
           </div>
 
@@ -315,20 +314,28 @@ export default function BookDetailPage() {
                 placeholder="페이지 (선택)"
                 className="w-full text-sm bg-white border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-400"
               />
-              <button
-                onClick={handleSubmitMemo}
-                disabled={!content.trim() || createMemo.isPending}
-                className="w-full py-2.5 gradient-brand text-white text-sm font-bold rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
-              >
-                {createMemo.isPending ? '저장 중...' : '저장'}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSubmitMemo}
+                  disabled={!content.trim() || createMemo.isPending}
+                  className="flex-1 py-2.5 gradient-brand text-white text-sm font-bold rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+                >
+                  {createMemo.isPending ? '저장 중...' : '저장'}
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2.5 bg-gray-100 text-gray-500 rounded-xl flex items-center gap-1.5 text-sm font-medium hover:bg-gray-200 transition-colors"
+                >
+                  <IconMic size={16} /> 보이스
+                </button>
+              </div>
             </div>
           )}
 
           {/* 메모 목록 */}
           {memos.length === 0 && !showForm && (
             <div className="flex flex-col items-center py-10 text-gray-300">
-              <span className="text-3xl mb-2">📝</span>
+              <IconNote size={36} className="mb-2" />
               <p className="text-sm">아직 메모가 없어요</p>
             </div>
           )}

@@ -3,11 +3,12 @@ import { UserButton } from '@clerk/react'
 import { cn } from '@/lib/utils'
 import InstallPrompt from '@/components/InstallPrompt'
 import UpdatePrompt from '@/components/UpdatePrompt'
+import { IconLibrary, IconStats, IconAI } from '@/components/icons'
 
 const NAV_ITEMS = [
-  { to: '/', label: '서재', icon: '📚', end: true },
-  { to: '/stats', label: '통계', icon: '📊', end: false },
-  { to: '/ai', label: 'AI코치', icon: '🤖', end: false },
+  { to: '/', label: '서재', Icon: IconLibrary, end: true },
+  { to: '/stats', label: '통계', Icon: IconStats, end: false },
+  { to: '/ai', label: 'AI코치', Icon: IconAI, end: false },
 ]
 
 export default function Layout() {
@@ -34,7 +35,7 @@ export default function Layout() {
                 )
               }
             >
-              <span>{item.icon}</span>
+              <item.Icon size={18} />
               {item.label}
             </NavLink>
           ))}
@@ -87,7 +88,7 @@ export default function Layout() {
                 )
               }
             >
-              <span className="text-2xl leading-none">{item.icon}</span>
+              <item.Icon size={22} />
               <span>{item.label}</span>
             </NavLink>
           ))}
