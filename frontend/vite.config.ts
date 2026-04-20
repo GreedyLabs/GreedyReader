@@ -41,6 +41,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        globIgnores: ['og-image.png', 'og-image.svg'],
         navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
           {
