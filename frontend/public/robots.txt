@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# 인증이 필요한 앱 내부 페이지 (어차피 크롤러가 접근 불가하지만 명시)
+Disallow: /books/
+Disallow: /stats
+Disallow: /ai
+
+Sitemap: https://read.greedylabs.kr/sitemap.xml
